@@ -1,0 +1,39 @@
+# イベントパターンのサンプル
+{
+  "version": "0",
+  "id": "3e3c153a-8339-4e30-8c35-687ebef853fe",
+  "detail-type": "put event",
+  "source": "sample.app",
+  "account": "123456789012",
+  "time": "2015-11-11T21:31:47Z",
+  "region": "us-east-1",
+  "resources": [],
+  "detail": {
+    "eventVersion": "",
+    "responseElements": null
+  }
+}
+
+
+# cloud shellで実行
+# CLIからEventBridgeにEventを通知する
+
+ENTRIES_JSON=$(cat << _EOF_
+[
+  {
+    "Source": "sample.app",
+    "Resources": [],
+    "DetailType": "put event",
+    "Detail": "{ \"responseElements\": null }",
+    "EventBusName": "default"
+  }
+]
+_EOF_) && echo ${ENTRIES_JSON} | jq '.'
+
+aws events put-events \
+    --entries file://<(echo ${ENTRIES_JSON})
+
+# API Gatewayからlambdaを実行
+curl <API Gatawayのエンドポイント>
+
+

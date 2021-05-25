@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Stack for EventBridge demo.
+Resources:
+  SNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: "SampleApiGatewayLambdaTopic"
+      Subscription:
+        - Protocol: sms
+          Endpoint: '<YOUR-PHONE-NUMBER>' # ex. +818011111111
+  SNSPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref SNSTopic
+      PolicyDocument:
+        Id: "__default_statement_ID"
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: "events.amazonaws.com"
+            Action:
+              - 'SNS:Publish'
+            Resource: !Ref SNSTopic
+            Sid: event-bridge-policy
+          - Effect: Allow
+            Principal:
+              AWS: !Ref "AWS::AccountId"
+            Action:
+              - 'SNS:GetTopicAttributes'
+              - 'SNS:SetTopicAttributes'
+              - 'SNS:AddPermission'
+              - 'SNS:RemovePermission'
+              - 'SNS:DeleteTopic'
+              - 'SNS:Subscribe'
+              - 'SNS:ListSubscriptionsByTopic'
+              - 'SNS:Publish'
+              - 'SNS:Receive'
+            Resource: !Ref SNSTopic
+            Condition:
+              StringEquals:
+                "AWS:SourceOwner": !Ref "AWS::AccountId"
+            Sid: "__default_statement_ID"
+  SampleCustomEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: "SampleCustomEventBus"
+  EventRule:
+    Type: AWS::Events::Rule
+    DependsOn:
+      - SNSTopic
+    Properties:
+      Description: "EventRule"
+      EventBusName: !Ref SampleCustomEventBus
+      EventPattern:
+        detail-type:
+          - "put event"
+        source:
+          - "sample.app"
+      State: "ENABLED"
+      Targets:
+        - Arn:
+            Ref: "SNSTopic"
+          Id: "SampleTopic"
